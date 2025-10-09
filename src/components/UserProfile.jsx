@@ -1,17 +1,20 @@
 import React from "react";
-import "./UserProfile.css";
+import "../styles/UserProfile.css";
 
 const UserProfile = () => {
+  // Replace with real data if available
+  const user = {
+    name: "John Doe",
+    email: "john.doe@email.com",
+    avatar: "https://ui-avatars.com/api/?name=John+Doe&background=random",
+  };
+
   return (
-    <div className="user-profile">
-      <img
-        className="user-avatar"
-        src="/src/assets/default-avatar.png"
-        alt="User Avatar"
-      />
+    <div className="user-profile dark:bg-gray-800 dark:border-gray-700 transition mb-6">
+      <img src={user.avatar} alt="User Avatar" className="user-avatar" />
       <div className="user-info">
-        <h2 className="user-name">John Doe</h2>
-        <p className="user-email">johndoe@example.com</p>
+        <span className="user-name dark:text-gray-100">{user.name}</span>
+        <span className="user-email dark:text-gray-400">{user.email}</span>
       </div>
     </div>
   );

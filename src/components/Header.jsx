@@ -1,20 +1,13 @@
-// src/components/Header.jsx
 import React from "react";
+import ThemeToggle from "./ThemeToggle";
 
-const Header = () => {
-  return (
-    <header className="bg-white shadow p-4 flex justify-between items-center">
-      <div className="text-lg font-bold">Project Dashboard</div>
-      <div className="flex items-center space-x-4">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="border rounded px-4 py-2"
-        />
-        <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-      </div>
-    </header>
-  );
-};
+const Header = () => (
+  <header className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 rounded-t-lg shadow-sm">
+    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+      ConstructAction
+    </h1>
+    <ThemeToggle />
+  </header>
+);
 
 export default Header;
