@@ -4,7 +4,7 @@ import React from "react";
 const Sidebar = () => {
   return (
     <div className="w-64 bg-gray-800 text-white flex flex-col">
-      <div className="p-4 text-xl font-bold">Construct Action</div>
+      <div className="p-4 text-xl font-bold">Construction Brain</div>
       <nav className="flex-1">
         <ul>
           <li className="p-4 hover:bg-gray-700 cursor-pointer">Dashboard</li>

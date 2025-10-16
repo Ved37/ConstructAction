@@ -5,7 +5,6 @@ import QnA from "./components/QnA";
 import DiscrepancyChecker from "./components/DiscrepancyChecker";
 import RFIDrafting from "./components/RFIDrafting";
 import UserProfile from "./components/UserProfile";
-import ThemeToggle from "./components/ThemeToggle";
 
 const App = () => {
   return (
@@ -13,14 +12,12 @@ const App = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <div className="p-4 max-w-5xl w-full mx-auto">
-          <UserProfile />
-          <main className="flex-1 space-y-6 mt-6">
-            <QnA />
-            <DiscrepancyChecker />
-            <RFIDrafting />
-          </main>
-        </div>
+        <UserProfile />
+        <main className="flex-1 p-6 bg-gray-100">
+          <QnA />
+          <DiscrepancyChecker />
+          <RFIDrafting />
+        </main>
       </div>
     </div>
   );
