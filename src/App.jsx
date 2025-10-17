@@ -1,25 +1,18 @@
-import React from "react";
+//import { useState } from "react";
 import Sidebar from "./components/Sidebar";
+import ChatInterface from "./components/ChatInterface";
 import Header from "./components/Header";
-import QnA from "./components/QnA";
-import DiscrepancyChecker from "./components/DiscrepancyChecker";
-import RFIDrafting from "./components/RFIDrafting";
 
-const App = () => {
+function App() {
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-
-        <main className="flex-1 p-6 bg-gray-100">
-          <QnA />
-          <DiscrepancyChecker />
-          <RFIDrafting />
-        </main>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Header />
+      <div className="flex flex-1">
+        <Sidebar />
+        <ChatInterface />
       </div>
     </div>
   );
-};
+}
 
 export default App;
