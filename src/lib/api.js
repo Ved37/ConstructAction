@@ -2,7 +2,9 @@ const TOKEN_KEY = "ca_token";
 const USER_KEY = "ca_current_user";
 
 export function getBaseUrl() {
-  // Prefer VITE_API_URL; fallback to '' for same-origin proxy
+  // During dev, prefer proxy by leaving base '' when VITE_API_PROXY is set
+  if (import.meta.env.VITE_API_PROXY) return "";
+  // Otherwise use configured API URL (prod or non-proxy dev)
   return import.meta.env.VITE_API_URL || "";
 }
 
@@ -56,9 +58,10 @@ export async function apiFetch(
   const isJson = resp.headers.get("content-type")?.includes("application/json");
   const data = isJson ? await resp.json().catch(() => ({})) : await resp.text();
   if (!resp.ok) {
-    const message =
-      (data && data.message) || resp.statusText || "Request failed";
-    const error = new Error(message);
+    const detail = isJson ? data?.detail || data?.message : undefined;
+    const textMsg = !isJson && typeof data === "string" ? data : undefined;
+    const message = detail || textMsg || resp.statusText || "Request failed";
+    const error = new Error(`${message} (HTTP ${resp.status})`);
     error.status = resp.status;
     error.data = data;
     throw error;

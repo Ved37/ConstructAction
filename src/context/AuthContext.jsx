@@ -28,14 +28,18 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(
     async ({ name, email, password, company, job_title, phone }) => {
-      // Call backend to create a user per your schema
+      // POST /auth/register expects JSON body
+      const body = { name, email, password };
+      if (company) body.company = company;
+      if (job_title) body.job_title = job_title;
+      if (phone) body.phone = phone;
       const data = await apiFetch("/api/auth/register", {
         method: "POST",
         auth: false,
-        body: { name, email, password, company, job_title, phone },
+        body,
       });
-      // Expect { token, user }
-      if (data?.token) setToken(data.token);
+      // FastAPI returns { access_token, token_type, user }
+      if (data?.access_token) setToken(data.access_token);
       if (data?.user) {
         saveUser(data.user);
         setUser(data.user);
@@ -46,12 +50,13 @@ export function AuthProvider({ children }) {
   );
 
   const login = useCallback(async ({ email, password }) => {
-    const data = await apiFetch("/api/auth/login", {
+    // Use JSON login endpoint exposed by backend
+    const data = await apiFetch("/api/auth/login-json", {
       method: "POST",
       auth: false,
       body: { email, password },
     });
-    if (data?.token) setToken(data.token);
+    if (data?.access_token) setToken(data.access_token);
     if (data?.user) {
       saveUser(data.user);
       setUser(data.user);

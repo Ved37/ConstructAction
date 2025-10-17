@@ -16,12 +16,20 @@ export default function Login() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    // Enforce bcrypt 72-byte limit (UTF-8 bytes) to match backend
+    const passBytes = new TextEncoder().encode(password).length;
+    if (passBytes > 72) {
+      setError(
+        "Password is too long. Please use 72 bytes or fewer (UTF-8). For example, shorten or remove emojis/special characters."
+      );
+      return;
+    }
     setLoading(true);
     try {
       await login({ email, password });
       navigate(from, { replace: true });
     } catch (err) {
-      const serverMsg = err?.data?.message || err?.message;
+      const serverMsg = err?.data?.detail || err?.data?.message || err?.message;
       setError(serverMsg || "Login failed");
     } finally {
       setLoading(false);

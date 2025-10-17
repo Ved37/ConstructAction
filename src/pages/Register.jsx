@@ -22,6 +22,14 @@ export default function Register() {
       setError("Passwords do not match");
       return;
     }
+    // Enforce bcrypt 72-byte limit (UTF-8 bytes)
+    const passBytes = new TextEncoder().encode(password).length;
+    if (passBytes > 72) {
+      setError(
+        "Password is too long. Please use 72 bytes or fewer (UTF-8). For example, shorten or remove emojis/special characters."
+      );
+      return;
+    }
     setLoading(true);
     try {
       await register({
@@ -34,7 +42,8 @@ export default function Register() {
       });
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Registration failed");
+      const serverMsg = err?.data?.detail || err?.data?.message || err?.message;
+      setError(serverMsg || "Registration failed");
     } finally {
       setLoading(false);
     }
