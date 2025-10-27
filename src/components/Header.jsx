@@ -7,25 +7,41 @@ import {
   UserPlus,
 } from "lucide-react";
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Header() {
-  const [activeTab, setActiveTab] = useState("chat");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Automatically set active tab based on current route
+  const currentPath = location.pathname;
+  const [activeTab, setActiveTab] = useState(
+    currentPath.includes("dashboard") ? "dashboard" : "chat"
+  );
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    navigate(tab === "chat" ? "/" : "/dashboard");
+  };
+
   return (
-    <div className="flex justify-between shadow-md">
+    <div className="flex justify-between shadow-md bg-white">
+      {/* Logo */}
       <div id="logo" className="my-6 pl-5 text-2xl text-blue-500 font-bold">
         <Link to="/">ConstrcutAction</Link>
       </div>
+
+      {/* Navigation Tabs */}
       <div
         id="toggle"
-        className="my-6 h-fit bg-gray-200 rounded-4xl font-medium"
+        className="my-6 h-fit bg-gray-200 rounded-4xl font-medium flex"
       >
         <button
           className={`px-4 py-2 rounded-4xl transition cursor-pointer ${
@@ -33,18 +49,19 @@ function Header() {
               ? "bg-blue-500 text-white"
               : "text-gray-600"
           }`}
-          onClick={() => setActiveTab("dashboard")}
+          onClick={() => handleTabChange("dashboard")}
         >
           <span className="flex items-center">
             <ChartColumn size={16} />
             <span className="px-1">Dashboard</span>
           </span>
         </button>
+
         <button
           className={`px-4 py-2 rounded-4xl transition cursor-pointer ${
             activeTab === "chat" ? "bg-blue-500 text-white" : "text-gray-600"
           }`}
-          onClick={() => setActiveTab("chat")}
+          onClick={() => handleTabChange("chat")}
         >
           <span className="flex items-center">
             <MessageCircle size={16} />
@@ -52,6 +69,8 @@ function Header() {
           </span>
         </button>
       </div>
+
+      {/* User Info / Auth Buttons */}
       <div id="user" className="my-6 pr-5">
         {user ? (
           <div className="flex items-center gap-2">

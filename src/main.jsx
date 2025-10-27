@@ -7,11 +7,22 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ChatInterface from "./components/ChatInterface";
+import ProjectDashboard from "./components/ProjectDashboard";
 
 const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
-    children: [{ path: "/", element: <App /> }],
+    children: [
+      {
+        path: "/",
+        element: <App />,
+        children: [
+          { path: "/", element: <ChatInterface /> },
+          { path: "dashboard", element: <ProjectDashboard /> },
+        ],
+      },
+    ],
   },
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
