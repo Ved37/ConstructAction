@@ -1,7 +1,11 @@
 // components/ProjectDashboard.jsx
+import { useState } from "react";
 import ProjectCard from "./ProjectCard";
+import ProjectFormModal from "./ProjectFormModal";
 
 function ProjectDashboard() {
+  const [showModal, setShowModal] = useState(false);
+
   const projects = [
     {
       project_id: 1,
@@ -36,11 +40,22 @@ function ProjectDashboard() {
 
   return (
     <div className="p-6 flex-1 overflow-y-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold">Projects</h2>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          + New Project
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-6">
         {projects.map((project, index) => (
           <ProjectCard key={project.project_id ?? index} project={project} />
         ))}
       </div>
+            {showModal && <ProjectFormModal onClose={() => setShowModal(false)} />}
+
     </div>
   );
 }
