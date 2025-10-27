@@ -6,22 +6,35 @@ import {
   LogIn,
   UserPlus,
 } from "lucide-react";
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.png";
 
 function Header() {
   const [activeTab, setActiveTab] = useState("chat");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    // derive active tab from current path
+    if (location.pathname === "/") setActiveTab("dashboard");
+    else setActiveTab("chat");
+  }, [location.pathname]);
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
   return (
-    <div className="flex justify-between shadow-md">
+    <div className="flex justify-between shadow-md z-1">
       <div id="logo" className="my-6 pl-5 text-2xl text-blue-500 font-bold">
-        <Link to="/">ConstrcutAction</Link>
+        <Link to="/">
+          <img
+            src={logo}
+            alt="ConstructAction"
+            className="h-8 md:h-10 lg:h-12 w-auto object-contain rounded-md shadow-sm transition-transform duration-200 hover:scale-105 select-none"
+          />
+        </Link>
       </div>
       <div
         id="toggle"
@@ -33,7 +46,7 @@ function Header() {
               ? "bg-blue-500 text-white"
               : "text-gray-600"
           }`}
-          onClick={() => setActiveTab("dashboard")}
+          onClick={() => navigate("/")}
         >
           <span className="flex items-center">
             <ChartColumn size={16} />
@@ -44,7 +57,7 @@ function Header() {
           className={`px-4 py-2 rounded-4xl transition cursor-pointer ${
             activeTab === "chat" ? "bg-blue-500 text-white" : "text-gray-600"
           }`}
-          onClick={() => setActiveTab("chat")}
+          onClick={() => navigate("/chat")}
         >
           <span className="flex items-center">
             <MessageCircle size={16} />
