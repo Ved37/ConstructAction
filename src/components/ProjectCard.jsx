@@ -1,3 +1,6 @@
+// components/ProjectCard.jsx
+import { Link } from "react-router-dom";
+
 function ProjectCard({ project }) {
   const getStatusColor = (status) => {
     const colors = {
@@ -7,25 +10,31 @@ function ProjectCard({ project }) {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
+  const id = project.project_id ?? project.id ?? project.projectCode ?? project.project_code ?? project.name;
+
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex justify-between items-start">
-        <h3 className="font-medium text-lg">{project.name}</h3>
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-            project.status
-          )}`}
-        >
-          {project.status}
-        </span>
-      </div>
-      <div className="mt-4">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>{project.phase}</span>
-          <span>Data Sources: {project.dataSources}</span>
+    <Link
+      to={`/projects/${id}`}
+      state={{ project }}
+      className="block"
+    >
+      <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <div className="flex justify-between items-start">
+          <h3 className="font-medium text-lg">{project.name} {project.owner ? `- ${project.owner}` : ""}</h3>
+          <span
+            className={`px-2 py-1 rounded-full text-xs ${getStatusColor(project.status)}`}
+          >
+            {project.status}
+          </span>
+        </div>
+        <div className="mt-4">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{project.budget}</span>
+            <span>Data Sources: {project.dataSources}</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
