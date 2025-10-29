@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import ChatInterface from "./components/ChatInterface";
 import ProjectDashboard from "./components/ProjectDashboard";
 import ProjectDetail from "./components/ProjectDetail";
+import UserProfile from "./components/UserProfile";
 
 
 const router = createBrowserRouter([
@@ -23,6 +24,8 @@ const router = createBrowserRouter([
           { path: "/", element: <ChatInterface /> },
           { path: "dashboard", element: <ProjectDashboard /> },
           { path: "projects/:id", element: <ProjectDetail /> },
+          { path: "/profile", element: <UserProfile /> },
+
         ],
       },
     ],
