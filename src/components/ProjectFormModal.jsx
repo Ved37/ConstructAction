@@ -1,39 +1,43 @@
 // components/ProjectFormModal.jsx
 import { useState } from "react";
+import { apiFetch } from "../lib/api";
 
-function ProjectFormModal({ onClose }) {
+function ProjectFormModal({ onClose, onCreated }) {
   const [formData, setFormData] = useState({
     name: "",
-    budget: "",
-    status: "",
-    dataSources: "",
-    owner: "",
-    client_name: "",
-    project_code: "",
-    start_date: "",
-    end_date: "",
-    location: "",
     description: "",
+    location: "",
+    project_type: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log("✅ Project Created:", formData);
-
-    // TODO: You can replace this with API call if needed
-    // Example:
-    // await fetch("/api/projects", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(formData),
-    // });
-
-    onClose();
+    setError("");
+    try {
+      setSubmitting(true);
+      const payload = {
+        name: formData.name,
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        project_type: formData.project_type || undefined,
+      };
+      const created = await apiFetch("/api/projects/", {
+        method: "POST",
+        body: payload,
+      });
+      onCreated?.(created);
+      onClose();
+    } catch (e) {
+      setError(e?.data?.detail || e?.message || "Failed to create project");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -47,10 +51,17 @@ function ProjectFormModal({ onClose }) {
         </button>
 
         <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
+        {error && (
+          <div className="mb-3 p-3 rounded bg-red-100 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Project Name</label>
+            <label className="block text-sm font-medium mb-1">
+              Project Name
+            </label>
             <input
               type="text"
               name="name"
@@ -59,92 +70,6 @@ function ProjectFormModal({ onClose }) {
               className="w-full border rounded-lg px-3 py-2"
               required
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Budget ($)</label>
-              <input
-                type="number"
-                name="budget"
-                value={formData.budget}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="">Select status</option>
-                <option value="On Track">On Track</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Delayed">Delayed</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Owner</label>
-            <input
-              type="text"
-              name="owner"
-              value={formData.owner}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Client Name</label>
-            <input
-              type="text"
-              name="client_name"
-              value={formData.client_name}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Project Code</label>
-            <input
-              type="text"
-              name="project_code"
-              value={formData.project_code}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Start Date</label>
-              <input
-                type="date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">End Date</label>
-              <input
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2"
-              />
-            </div>
           </div>
 
           <div>
@@ -159,7 +84,22 @@ function ProjectFormModal({ onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label className="block text-sm font-medium mb-1">
+              Project Type
+            </label>
+            <input
+              type="text"
+              name="project_type"
+              value={formData.project_type}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Description
+            </label>
             <textarea
               name="description"
               value={formData.description}
@@ -179,9 +119,10 @@ function ProjectFormModal({ onClose }) {
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              disabled={submitting}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
             >
-              Create
+              {submitting ? "Creating..." : "Create"}
             </button>
           </div>
         </form>

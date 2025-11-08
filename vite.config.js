@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       target: env.VITE_API_PROXY,
       changeOrigin: true,
       secure: false,
-      rewrite: (path) => path.replace(/^\/api/, ""),
+      // Do not rewrite path so backend receives /api/* as-is per OpenAPI
     };
   }
   return {
