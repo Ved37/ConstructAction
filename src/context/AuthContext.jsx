@@ -51,27 +51,28 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async ({ email, password }) => {
-    // FastAPI /api/login expects { email, password } and returns Token
-    const data = await apiFetch("/api/login", {
-      method: "POST",
-      auth: false,
-      body: { email, password },
-    });
-    if (data?.access_token) setToken(data.access_token);
-    const userFromToken = data
-      ? {
-          user_id: data.user_id,
-          email: data.email,
-          name: data.full_name,
-        }
-      : null;
-    if (userFromToken) {
-      saveUser(userFromToken);
-      setUser(userFromToken);
-      return userFromToken;
-    }
-    return null;
-  }, []);
+  // FastAPI /api/login expects { email, password } and returns Token
+  const data = await apiFetch("/api/login", {
+    method: "POST",
+    auth: false,
+    body: { email, password },
+  });
+  if (data?.access_token) setToken(data.access_token);
+  const userFromToken = data
+    ? {
+        user_id: data.user_id,
+        email: data.email,
+        name: data.full_name,
+        last_login: data.last_login, // Use the last_login from backend
+      }
+    : null;
+  if (userFromToken) {
+    saveUser(userFromToken);
+    setUser(userFromToken);
+    return userFromToken;
+  }
+  return null;
+}, []);
 
   const logout = useCallback(async () => {
     clearToken();
