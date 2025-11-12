@@ -5,6 +5,14 @@ import { apiFetch } from "../lib/api";
 function UserProfile() {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: ""
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const { user: authUser } = useAuth();
   const [user, setUser] = useState({
     user_id: "",
@@ -20,9 +28,16 @@ function UserProfile() {
 
   // Format date function
   const formatDate = (dateString) => {
-    if (!dateString) return "Never";
+    if (!dateString || dateString === "null" || dateString === "undefined") {
+      return "Never";
+    }
+    
     try {
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Never";
+      }
+      
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -31,7 +46,8 @@ function UserProfile() {
         minute: '2-digit'
       });
     } catch (error) {
-      return "Invalid date";
+      console.error("Date formatting error:", error);
+      return "Never";
     }
   };
 
@@ -42,38 +58,81 @@ function UserProfile() {
     }
   }, [authUser]);
 
- const fetchUserData = async () => {
-  try {
-    setLoading(true);
-    const userData = await apiFetch(`/api/users/${authUser.user_id}`);
-    
-    // DEBUG: Check what data you're receiving
-    console.log("Raw user data from API:", userData);
-    console.log("Last login value:", userData.last_login);
-    console.log("Last login type:", typeof userData.last_login);
-    
-    setUser({
-      ...userData,
-      status: userData.is_active ? "Active" : "Inactive"
-    });
-  } catch (error) {
-    console.error("Failed to fetch user data:", error);
-    alert("Failed to load user profile data.");
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const userData = await apiFetch(`/api/users/${authUser.user_id}`);
+      setUser({
+        ...userData,
+        status: userData.is_active ? "Active" : "Inactive"
+      });
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+      alert("Failed to load user profile data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUser({ ...user, [name]: value });
   };
 
+  const handleChangePassword = async () => {
+  // Validate passwords
+  if (passwordData.new_password !== passwordData.confirm_password) {
+    setPasswordError("New passwords do not match");
+    return;
+  }
+
+  if (passwordData.new_password.length < 6) {
+    setPasswordError("New password must be at least 6 characters long");
+    return;
+  }
+
+  try {
+    setPasswordLoading(true);
+    setPasswordError("");
+
+    // DEBUG: Check if token exists
+    const token = localStorage.getItem("ca_token");
+    console.log("Token exists:", !!token);
+    console.log("Token value:", token);
+
+    const response = await apiFetch("/api/change-password", {
+      method: "PUT",
+      body: {
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
+      }
+      // auth: true is the default, so we don't need to specify it
+    });
+
+    alert("Password changed successfully!");
+    setShowChangePassword(false);
+    setPasswordData({
+      current_password: "",
+      new_password: "",
+      confirm_password: ""
+    });
+  } catch (error) {
+    console.error("Failed to change password:", error);
+    console.error("Error status:", error.status);
+    console.error("Error data:", error.data);
+    
+    // Extract error message from the response
+    const errorMessage = error.data?.detail || error.message || "Failed to change password. Please check your current password.";
+    setPasswordError(errorMessage);
+  } finally {
+    setPasswordLoading(false);
+  }
+};
+
   const handleSave = async () => {
     try {
       setLoading(true);
       
-      // Prepare update data - only send fields that can be updated
       const updateData = {
         name: user.name,
         email: user.email,
@@ -82,19 +141,16 @@ function UserProfile() {
         phone: user.phone,
       };
 
-      // Validate required fields
       if (!updateData.name.trim() || !updateData.email.trim()) {
         alert("Name and email are required fields.");
         return;
       }
 
-      // Call the update API endpoint
       const updatedUser = await apiFetch(`/api/users/${authUser.user_id}`, {
         method: "PUT",
         body: updateData,
       });
 
-      // Update local state with the response
       setUser({
         ...updatedUser,
         status: updatedUser.is_active ? "Active" : "Inactive"
@@ -110,15 +166,24 @@ function UserProfile() {
     }
   };
 
-  const handleCancel = () => {
-    // Reload original data when canceling
-    fetchUserData();
-    setEditing(false);
-  };
+const handleCancel = () => {
+  fetchUserData();
+  setEditing(false);
+};
 
-  const handleChangePassword = () => {
-    // Implement change password functionality
-    alert("Change password functionality to be implemented");
+const handlePasswordChange = (e) => {
+  const { name, value } = e.target;
+  setPasswordData({ ...passwordData, [name]: value });
+};
+
+  const closePasswordModal = () => {
+    setShowChangePassword(false);
+    setPasswordData({
+      current_password: "",
+      new_password: "",
+      confirm_password: ""
+    });
+    setPasswordError("");
   };
 
   if (loading && !user.user_id) {
@@ -271,7 +336,7 @@ function UserProfile() {
                 Edit Profile
               </button>
               <button 
-                onClick={handleChangePassword}
+                onClick={() => setShowChangePassword(true)}
                 className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-200"
               >
                 Change Password
@@ -281,6 +346,90 @@ function UserProfile() {
         </div>
 
       </div>
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Change Password</h3>
+            
+            {passwordError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {passwordError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  name="current_password"
+                  value={passwordData.current_password}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter current password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  name="new_password"
+                  value={passwordData.new_password}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  name="confirm_password"
+                  value={passwordData.confirm_password}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={closePasswordModal}
+                disabled={passwordLoading}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangePassword}
+                disabled={passwordLoading}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-200"
+              >
+                {passwordLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Changing...
+                  </span>
+                ) : "Change Password"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
