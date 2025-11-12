@@ -131,21 +131,7 @@ function UserProfile() {
             </>
           )}
         </div>
-
-        {/* Chat history stays same */}
-        {!editing && (
-          <div className="mt-8 text-left">
-            <h3 className="text-lg font-semibold mb-2">Chat History</h3>
-            <div className="border rounded-md p-3 mb-2">
-              <p>Hey there!</p>
-              <p className="text-xs text-gray-500">2025-10-25 10:30 AM</p>
-            </div>
-            <div className="border rounded-md p-3 mb-2">
-              <p>Project update: Everything on track.</p>
-              <p className="text-xs text-gray-500">2025-10-26 2:15 PM</p>
-            </div>
-          </div>
-        )}
+        
       </div>
     </div>
   );
