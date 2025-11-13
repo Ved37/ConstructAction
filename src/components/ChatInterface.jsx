@@ -1,12 +1,15 @@
-// ...existing code...
 import Sidebar from "./Sidebar";
 
 function ChatInterface() {
   return (
-    <div className="flex w-full">
+    <div className="flex h-full w-full overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-2"> {/* changed mb-2 -> pb-2 */}
+
+      {/* Main Chat Section */}
+      <div className="flex-1 flex flex-col bg-gray-50">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+          {/* Example message */}
           <div className="flex items-start space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white">
               AI
@@ -19,9 +22,12 @@ function ChatInterface() {
               </p>
             </div>
           </div>
-          {/* Add more messages here */}
+
+          {/* Add more messages dynamically here */}
         </div>
-        <div className="p-4 border-t bg-white sticky bottom-0">
+
+        {/* Chat Input (fixed at bottom) */}
+        <div className="p-4 border-t bg-white">
           <div className="flex space-x-2">
             <input
               type="text"
@@ -39,4 +45,3 @@ function ChatInterface() {
 }
 
 export default ChatInterface;
-// ...existing code...

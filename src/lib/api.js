@@ -42,8 +42,15 @@ export async function apiFetch(
   const url = `${base}${path}`;
   const token = getToken();
 
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+  const isUrlEncoded =
+    typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams;
   const finalHeaders = {
-    "Content-Type": "application/json",
+    // Let the browser set appropriate Content-Type for FormData or URLSearchParams
+    ...(isFormData || isUrlEncoded
+      ? {}
+      : { "Content-Type": "application/json" }),
     ...headers,
   };
   if (auth && token) {
@@ -52,7 +59,11 @@ export async function apiFetch(
   const resp = await fetch(url, {
     method,
     headers: finalHeaders,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body
+      ? isFormData || isUrlEncoded
+        ? body
+        : JSON.stringify(body)
+      : undefined,
     credentials: "include",
   });
   const isJson = resp.headers.get("content-type")?.includes("application/json");

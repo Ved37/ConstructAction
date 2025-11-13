@@ -26,41 +26,49 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const register = useCallback(
-    async ({ name, email, password, company, job_title, phone }) => {
-      // POST /auth/register expects JSON body
-      const body = { name, email, password };
-      if (company) body.company = company;
-      if (job_title) body.job_title = job_title;
-      if (phone) body.phone = phone;
-      const data = await apiFetch("/api/auth/register", {
-        method: "POST",
-        auth: false,
-        body,
-      });
-      // FastAPI returns { access_token, token_type, user }
-      if (data?.access_token) setToken(data.access_token);
-      if (data?.user) {
-        saveUser(data.user);
-        setUser(data.user);
-      }
-      return data?.user || null;
-    },
-    []
-  );
+  const register = useCallback(async ({ name, email, password }) => {
+    // FastAPI /api/register expects { email, password, full_name }
+    const body = { email, password, full_name: name };
+    const data = await apiFetch("/api/register", {
+      method: "POST",
+      auth: false,
+      body,
+    });
+    // Spec returns Token: { access_token, token_type, user_id, email, full_name }
+    if (data?.access_token) setToken(data.access_token);
+    const userFromToken = data
+      ? {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.full_name,
+        }
+      : null;
+    if (userFromToken) {
+      saveUser(userFromToken);
+      setUser(userFromToken);
+    }
+    return userFromToken;
+  }, []);
 
   const login = useCallback(async ({ email, password }) => {
-    // Use JSON login endpoint exposed by backend
-    const data = await apiFetch("/api/auth/login-json", {
+    // FastAPI /api/login expects { email, password } and returns Token
+    const data = await apiFetch("/api/login", {
       method: "POST",
       auth: false,
       body: { email, password },
     });
     if (data?.access_token) setToken(data.access_token);
-    if (data?.user) {
-      saveUser(data.user);
-      setUser(data.user);
-      return data.user;
+    const userFromToken = data
+      ? {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.full_name,
+        }
+      : null;
+    if (userFromToken) {
+      saveUser(userFromToken);
+      setUser(userFromToken);
+      return userFromToken;
     }
     return null;
   }, []);

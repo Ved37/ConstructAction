@@ -74,10 +74,13 @@ function Header() {
       <div id="user" className="my-6 pr-5">
         {user ? (
           <div className="flex items-center gap-2">
-            <span className="p-2 font-medium flex items-center border-2 border-gray-300 bg-gray-100 rounded-md">
+            <button
+              onClick={() => navigate("/profile")}
+              className="p-2 font-medium flex items-center border-2 border-gray-300 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
               <User2 size={16} />
               <span className="px-1">{user.name || user.email}</span>
-            </span>
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 px-3 py-2 rounded-md text-red-600 border border-red-200 hover:bg-red-50"
