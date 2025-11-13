@@ -28,7 +28,7 @@ function ProjectDetail() {
     if (project) return;
 
     // Otherwise, fetch the project by id (deep-link)
-    const id = params.id;
+  const id = params.projectId;
     if (!id) return;
 
     async function fetchProject() {
@@ -44,10 +44,10 @@ function ProjectDetail() {
     }
 
     fetchProject();
-  }, [params.id, project]);
+  }, [params.projectId, project]);
 
   useEffect(() => {
-    const id = project?.project_id || params.id;
+  const id = project?.project_id || params.projectId;
     if (!id) return;
     async function fetchDocs() {
       try {
@@ -64,10 +64,10 @@ function ProjectDetail() {
       }
     }
     fetchDocs();
-  }, [project, params.id]);
+  }, [project, params.projectId]);
 
   useEffect(() => {
-    const id = project?.project_id || params.id;
+  const id = project?.project_id || params.projectId;
     if (!id) return;
     async function fetchStats() {
       try {
@@ -81,7 +81,7 @@ function ProjectDetail() {
       }
     }
     fetchStats();
-  }, [project, params.id]);
+  }, [project, params.projectId]);
 
   const handleUpload = async (e) => {
     if (!project) return;

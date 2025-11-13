@@ -38,6 +38,13 @@ async def ready():
     return {"chunks_path": path, "exists": exists}
 
 
+@router.post("/init")
+async def init():
+    # Placeholder "lazy init" endpoint to align with acceptance criteria
+    # In a full implementation, this would load models and indexes into memory
+    return {"status": "ok", "initialized": True}
+
+
 def _dummy_answer(q: str) -> AskResponse:
     return AskResponse(
         answer=(

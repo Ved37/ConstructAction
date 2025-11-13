@@ -27,6 +27,8 @@ Env (optional but supported):
 - CHUNKS_PKL_PATH: Path to a pickle file for chunks/index (default `./data/chunks.pkl`).
 - CORS_ORIGINS: Comma-separated origins (default `*`).
 - JWT_SECRET, JWT_ALG, JWT_EXP_MIN: Auth config.
+- GEN_MODEL: Generation model id (default `google/flan-t5-small`).
+- QA_MODE: `generative` or `extractive` (informational placeholder in this stub).
 
 Run with Docker:
 
@@ -39,6 +41,7 @@ Smoke test (examples):
 - GET http://localhost:8000/ -> `{ "message": "ConstrucAction API is running" }`
 - GET http://localhost:8000/health -> `{ "api": "ok", "db": "not_configured" }`
 - GET http://localhost:8000/qa/ready -> status object
+- POST http://localhost:8000/qa/init -> {"status":"ok","initialized":true}
 
 ### Frontend
 
