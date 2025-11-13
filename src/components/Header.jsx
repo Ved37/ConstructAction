@@ -18,7 +18,7 @@ function Header() {
   // Automatically set active tab based on current route
   const currentPath = location.pathname;
   const [activeTab, setActiveTab] = useState(
-    currentPath.includes("dashboard") ? "dashboard" : "chat"
+    currentPath.startsWith("/chat") ? "chat" : "dashboard"
   );
 
   const handleLogout = async () => {
@@ -28,7 +28,7 @@ function Header() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    navigate(tab === "chat" ? "/" : "/dashboard");
+    navigate(tab === "chat" ? "/chat" : "/");
   };
 
   return (

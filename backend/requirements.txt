@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+asyncpg
+python-dotenv
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+PyJWT
+python-multipart
+email-validator
+numpy
+faiss-cpu
+sentence-transformers
+transformers
+torch
+langchain
