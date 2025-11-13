@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // components/ProjectDetail.jsx
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -196,8 +197,6 @@ function ProjectDetail() {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );

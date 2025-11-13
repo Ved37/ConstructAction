@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -9,7 +9,7 @@ function UserProfile() {
   const [passwordData, setPasswordData] = useState({
     current_password: "",
     new_password: "",
-    confirm_password: ""
+    confirm_password: "",
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -31,19 +31,19 @@ function UserProfile() {
     if (!dateString || dateString === "null" || dateString === "undefined") {
       return "Never";
     }
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         return "Never";
       }
-      
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (error) {
       console.error("Date formatting error:", error);
@@ -51,20 +51,13 @@ function UserProfile() {
     }
   };
 
-  // Load user data when component mounts
-  useEffect(() => {
-    if (authUser?.user_id) {
-      fetchUserData();
-    }
-  }, [authUser]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       setLoading(true);
       const userData = await apiFetch(`/api/users/${authUser.user_id}`);
       setUser({
         ...userData,
-        status: userData.is_active ? "Active" : "Inactive"
+        status: userData.is_active ? "Active" : "Inactive",
       });
     } catch (error) {
       console.error("Failed to fetch user data:", error);
@@ -72,7 +65,14 @@ function UserProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authUser?.user_id]);
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (authUser?.user_id) {
+      fetchUserData();
+    }
+  }, [authUser, fetchUserData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,59 +80,62 @@ function UserProfile() {
   };
 
   const handleChangePassword = async () => {
-  // Validate passwords
-  if (passwordData.new_password !== passwordData.confirm_password) {
-    setPasswordError("New passwords do not match");
-    return;
-  }
+    // Validate passwords
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
 
-  if (passwordData.new_password.length < 6) {
-    setPasswordError("New password must be at least 6 characters long");
-    return;
-  }
+    if (passwordData.new_password.length < 6) {
+      setPasswordError("New password must be at least 6 characters long");
+      return;
+    }
 
-  try {
-    setPasswordLoading(true);
-    setPasswordError("");
+    try {
+      setPasswordLoading(true);
+      setPasswordError("");
 
-    // DEBUG: Check if token exists
-    const token = localStorage.getItem("ca_token");
-    console.log("Token exists:", !!token);
-    console.log("Token value:", token);
+      // DEBUG: Check if token exists
+      const token = localStorage.getItem("ca_token");
+      console.log("Token exists:", !!token);
+      console.log("Token value:", token);
 
-    const response = await apiFetch("/api/change-password", {
-      method: "PUT",
-      body: {
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password
-      }
-      // auth: true is the default, so we don't need to specify it
-    });
+      await apiFetch("/api/change-password", {
+        method: "PUT",
+        body: {
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password,
+        },
+        // auth: true is the default, so we don't need to specify it
+      });
 
-    alert("Password changed successfully!");
-    setShowChangePassword(false);
-    setPasswordData({
-      current_password: "",
-      new_password: "",
-      confirm_password: ""
-    });
-  } catch (error) {
-    console.error("Failed to change password:", error);
-    console.error("Error status:", error.status);
-    console.error("Error data:", error.data);
-    
-    // Extract error message from the response
-    const errorMessage = error.data?.detail || error.message || "Failed to change password. Please check your current password.";
-    setPasswordError(errorMessage);
-  } finally {
-    setPasswordLoading(false);
-  }
-};
+      alert("Password changed successfully!");
+      setShowChangePassword(false);
+      setPasswordData({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+    } catch (error) {
+      console.error("Failed to change password:", error);
+      console.error("Error status:", error.status);
+      console.error("Error data:", error.data);
+
+      // Extract error message from the response
+      const errorMessage =
+        error.data?.detail ||
+        error.message ||
+        "Failed to change password. Please check your current password.";
+      setPasswordError(errorMessage);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
       setLoading(true);
-      
+
       const updateData = {
         name: user.name,
         email: user.email,
@@ -153,9 +156,9 @@ function UserProfile() {
 
       setUser({
         ...updatedUser,
-        status: updatedUser.is_active ? "Active" : "Inactive"
+        status: updatedUser.is_active ? "Active" : "Inactive",
       });
-      
+
       setEditing(false);
       alert("Profile updated successfully!");
     } catch (error) {
@@ -166,22 +169,22 @@ function UserProfile() {
     }
   };
 
-const handleCancel = () => {
-  fetchUserData();
-  setEditing(false);
-};
+  const handleCancel = () => {
+    fetchUserData();
+    setEditing(false);
+  };
 
-const handlePasswordChange = (e) => {
-  const { name, value } = e.target;
-  setPasswordData({ ...passwordData, [name]: value });
-};
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+  };
 
   const closePasswordModal = () => {
     setShowChangePassword(false);
     setPasswordData({
       current_password: "",
       new_password: "",
-      confirm_password: ""
+      confirm_password: "",
     });
     setPasswordError("");
   };
@@ -229,7 +232,9 @@ const handlePasswordChange = (e) => {
             </div>
           ) : (
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-800">{user.name}</h3>
+              <h3 className="text-xl font-semibold text-gray-800">
+                {user.name}
+              </h3>
               <p className="text-gray-600">{user.email}</p>
             </div>
           )}
@@ -277,7 +282,13 @@ const handlePasswordChange = (e) => {
                 </div>
                 <div className="flex flex-col">
                   <label className="font-medium text-sm mb-1">Status:</label>
-                  <div className={`px-3 py-2 rounded ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  <div
+                    className={`px-3 py-2 rounded ${
+                      user.is_active
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {user.status}
                   </div>
                 </div>
@@ -286,15 +297,39 @@ const handlePasswordChange = (e) => {
           ) : (
             <>
               <div className="space-y-3">
-                <p><strong className="text-gray-800">Company:</strong><br />{user.company || "Not specified"}</p>
-                <p><strong className="text-gray-800">Job Title:</strong><br />{user.job_title || "Not specified"}</p>
-                <p><strong className="text-gray-800">Phone:</strong><br />{user.phone || "Not specified"}</p>
+                <p>
+                  <strong className="text-gray-800">Company:</strong>
+                  <br />
+                  {user.company || "Not specified"}
+                </p>
+                <p>
+                  <strong className="text-gray-800">Job Title:</strong>
+                  <br />
+                  {user.job_title || "Not specified"}
+                </p>
+                <p>
+                  <strong className="text-gray-800">Phone:</strong>
+                  <br />
+                  {user.phone || "Not specified"}
+                </p>
               </div>
               <div className="space-y-3">
-                <p><strong className="text-gray-800">Created At:</strong><br />{formatDate(user.created_at)}</p>
-                <p><strong className="text-gray-800">Last Login:</strong><br />{formatDate(user.last_login)}</p>
-                <p className={user.is_active ? "text-green-600" : "text-red-600"}>
-                  <strong>Status:</strong><br />{user.status}
+                <p>
+                  <strong className="text-gray-800">Created At:</strong>
+                  <br />
+                  {formatDate(user.created_at)}
+                </p>
+                <p>
+                  <strong className="text-gray-800">Last Login:</strong>
+                  <br />
+                  {formatDate(user.last_login)}
+                </p>
+                <p
+                  className={user.is_active ? "text-green-600" : "text-red-600"}
+                >
+                  <strong>Status:</strong>
+                  <br />
+                  {user.status}
                 </p>
               </div>
             </>
@@ -311,13 +346,31 @@ const handlePasswordChange = (e) => {
               >
                 {loading ? (
                   <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Saving...
                   </span>
-                ) : "Save Changes"}
+                ) : (
+                  "Save Changes"
+                )}
               </button>
               <button
                 onClick={handleCancel}
@@ -335,7 +388,7 @@ const handlePasswordChange = (e) => {
               >
                 Edit Profile
               </button>
-              <button 
+              <button
                 onClick={() => setShowChangePassword(true)}
                 className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-200"
               >
@@ -344,7 +397,6 @@ const handlePasswordChange = (e) => {
             </>
           )}
         </div>
-
       </div>
 
       {/* Change Password Modal */}
@@ -352,7 +404,7 @@ const handlePasswordChange = (e) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">Change Password</h3>
-            
+
             {passwordError && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {passwordError}
@@ -418,13 +470,31 @@ const handlePasswordChange = (e) => {
               >
                 {passwordLoading ? (
                   <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Changing...
                   </span>
-                ) : "Change Password"}
+                ) : (
+                  "Change Password"
+                )}
               </button>
             </div>
           </div>
