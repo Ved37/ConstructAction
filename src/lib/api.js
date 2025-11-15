@@ -80,4 +80,30 @@ export async function apiFetch(
   return data;
 }
 
+// NEW: Profile picture API functions
+export const uploadProfilePicture = async (formData) => {
+  return await apiFetch("/api/profile/picture", {
+    method: "POST",
+    body: formData,
+    headers: {}, // Let browser set Content-Type for FormData
+  });
+};
+
+export const deleteProfilePicture = async () => {
+  return await apiFetch("/api/profile/picture", {
+    method: "DELETE",
+  });
+};
+
+export const updateUserProfile = async (profileData) => {
+  return await apiFetch("/api/profile", {
+    method: "PUT",
+    body: profileData,
+  });
+};
+
+export const getProfile = async () => {
+  return await apiFetch("/api/profile");
+};
+
 export const storageKeys = { TOKEN_KEY, USER_KEY };
