@@ -82,7 +82,8 @@ export async function apiFetch(
 
 // NEW: Profile picture API functions
 export const uploadProfilePicture = async (formData) => {
-  return await apiFetch("/api/profile/picture", {
+  // /api/users/me/picture expects multipart form-data { file }
+  return await apiFetch("/api/users/me/picture", {
     method: "POST",
     body: formData,
     headers: {}, // Let browser set Content-Type for FormData
@@ -90,20 +91,183 @@ export const uploadProfilePicture = async (formData) => {
 };
 
 export const deleteProfilePicture = async () => {
-  return await apiFetch("/api/profile/picture", {
+  return await apiFetch("/api/users/me/picture", {
     method: "DELETE",
   });
 };
 
 export const updateUserProfile = async (profileData) => {
-  return await apiFetch("/api/profile", {
+  // Returns { message, user }
+  return await apiFetch("/api/users/me", {
     method: "PUT",
     body: profileData,
   });
 };
 
 export const getProfile = async () => {
-  return await apiFetch("/api/profile");
+  // Returns UserResponse
+  return await apiFetch("/api/users/me");
+};
+
+// -----------------------------
+// Users collection/admin endpoints
+// -----------------------------
+export const createUserAdmin = async ({
+  name,
+  email,
+  password_hash,
+  company,
+  job_title,
+  phone,
+}) => {
+  return await apiFetch("/api/users/", {
+    method: "POST",
+    auth: false, // currently open per spec
+    body: { name, email, password_hash, company, job_title, phone },
+  });
+};
+
+export const listUsers = async ({ skip = 0, limit = 100 } = {}) => {
+  const qs = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+  return await apiFetch(`/api/users/?${qs.toString()}`, { auth: false });
+};
+
+export const getUserById = async (userId) => {
+  return await apiFetch(`/api/users/${userId}`, { auth: false });
+};
+
+export const getUserByEmail = async (email) => {
+  const encoded = encodeURIComponent(email);
+  return await apiFetch(`/api/users/email/${encoded}`, { auth: false });
+};
+
+export const updateUserById = async (userId, payload) => {
+  return await apiFetch(`/api/users/${userId}`, {
+    method: "PUT",
+    auth: false, // currently open per spec
+    body: payload,
+  });
+};
+
+export const deleteUserById = async (userId) => {
+  return await apiFetch(`/api/users/${userId}`, {
+    method: "DELETE",
+    auth: false,
+  });
 };
 
 export const storageKeys = { TOKEN_KEY, USER_KEY };
+
+// Chat session APIs
+// Create a new chat session. Optionally pass a projectId for project-aware context.
+export const createChatSession = async (projectId) => {
+  const body = projectId ? { project_id: projectId } : {};
+  return await apiFetch("/api/chat/sessions", {
+    method: "POST",
+    body,
+  });
+};
+
+// Ask a question within an existing chat session.
+// Returns ChatAskResponse with fields: answer, references[], confidence, ai_model, chunks_used
+export const askChat = async (sessionId, question) => {
+  if (!sessionId) throw new Error("Missing chat sessionId for askChat");
+  return await apiFetch(`/api/chat/sessions/${sessionId}/ask`, {
+    method: "POST",
+    body: { question },
+  });
+};
+
+// Optional helpers: list sessions and fetch history (not yet used by UI)
+export const listChatSessions = async () => {
+  // Expected response: { sessions: [...] }
+  return await apiFetch("/api/chat/sessions", { method: "GET" });
+};
+
+export const getChatHistory = async (sessionId) => {
+  if (!sessionId) throw new Error("Missing sessionId for getChatHistory");
+  // Expected response: { history: [...] }
+  return await apiFetch(`/api/chat/sessions/${sessionId}/history`, {
+    method: "GET",
+  });
+};
+
+// -----------------------------
+// New QA endpoints integration
+// -----------------------------
+// Resolve QA base path. Supports env override and backward compatibility.
+function getQaBasePath() {
+  const fromEnv = import.meta?.env?.VITE_QA_BASE;
+  // Ensure leading slash if set
+  if (fromEnv && typeof fromEnv === "string") {
+    return fromEnv.startsWith("/") ? fromEnv : `/${fromEnv}`;
+  }
+  return "/qa"; // default per spec
+}
+
+// Health / readiness check
+export const readyQa = async () => {
+  const base = getQaBasePath();
+  return await apiFetch(`${base}/ready`, { method: "GET", auth: true });
+};
+
+// Force initialization (optional – backend may lazy init on ask)
+export const initQa = async () => {
+  const base = getQaBasePath();
+  return await apiFetch(`${base}/init`, { method: "POST", auth: true });
+};
+
+// Ask the RAG/QA engine for an answer.
+// question: string (required)
+// topK: optional number 1-20 (defaults backend side to 5)
+// Returns shape:
+// { answer, score, source, page_number, retrieved: [{source,page_number,snippet}, ...] }
+export const askQa = async (question, topK) => {
+  if (!question || !question.trim()) {
+    const err = new Error("Please enter a question.");
+    err.status = 400;
+    throw err;
+  }
+  try {
+    const base = getQaBasePath();
+    return await apiFetch(`${base}/ask`, {
+      method: "POST",
+      body: { question, ...(topK ? { top_k: topK } : {}) },
+      auth: true,
+    });
+  } catch (e) {
+    // Provide cleaner high-level messages based on status codes
+    if (e.status === 400) {
+      e.userMessage = "Please enter a question.";
+    } else if (e.status === 404) {
+      // Smart fallback: if default /qa path 404s, retry /api/qa automatically once
+      try {
+        const base = getQaBasePath();
+        const triedDefault = base === "/qa";
+        const altBase = triedDefault
+          ? "/api/qa"
+          : base === "/api/qa"
+          ? "/qa"
+          : null;
+        if (altBase) {
+          const res = await apiFetch(`${altBase}/ask`, {
+            method: "POST",
+            body: { question, ...(topK ? { top_k: topK } : {}) },
+            auth: true,
+          });
+          return res;
+        }
+      } catch (_retryErr) {
+        // reference to satisfy linter; we intentionally ignore retry error
+        _retryErr;
+        // fall through to message assignment below
+      }
+      e.userMessage = "Service unavailable. Try again later.";
+    } else if (e.status === 503) {
+      e.userMessage = "Knowledge base not ready. Try again later.";
+    } else if (e.status === 500) {
+      e.userMessage = "Unexpected error. Try again.";
+    }
+    throw e;
+  }
+};

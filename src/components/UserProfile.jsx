@@ -81,8 +81,8 @@ function UserProfile() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      // FIXED: Use the new profile endpoint
-      const userData = await apiFetch("/api/profile");
+      // Use the new users/me endpoint
+      const userData = await apiFetch("/api/users/me");
       setUser({
         ...userData,
         status: userData.is_active ? "Active" : "Inactive",
@@ -151,7 +151,7 @@ function UserProfile() {
     try {
       setLoading(true);
 
-      // FIXED: Use the new profile update structure
+      // Use the new users/me update structure
       const updateData = {
         name: user.name,
         company: user.company,
@@ -164,8 +164,8 @@ function UserProfile() {
         return;
       }
 
-      // FIXED: Use the new profile endpoint
-      const response = await apiFetch("/api/profile", {
+      // PUT /api/users/me returns { message, user }
+      const response = await apiFetch("/api/users/me", {
         method: "PUT",
         body: updateData,
       });
@@ -228,7 +228,7 @@ function UserProfile() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await apiFetch("/api/profile/picture", {
+      const response = await apiFetch("/api/users/me/picture", {
         method: "POST",
         body: formData,
         headers: {}, // Let browser set Content-Type for FormData
@@ -274,7 +274,7 @@ function UserProfile() {
     setUploadingPicture(true);
 
     try {
-      await apiFetch("/api/profile/picture", {
+      await apiFetch("/api/users/me/picture", {
         method: "DELETE",
       });
 

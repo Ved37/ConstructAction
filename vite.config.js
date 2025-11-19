@@ -14,6 +14,12 @@ export default defineConfig(({ mode }) => {
       secure: false,
       // Do not rewrite path so backend receives /api/* as-is per OpenAPI
     };
+    // Proxy QA endpoints to backend during dev
+    proxy["/qa"] = {
+      target: env.VITE_API_PROXY,
+      changeOrigin: true,
+      secure: false,
+    };
   }
   return {
     plugins: [react(), tailwindcss()],

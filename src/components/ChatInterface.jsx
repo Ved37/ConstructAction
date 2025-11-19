@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Sidebar from "./Sidebar";
-import { apiFetch } from "../lib/api";
+import { askQa } from "../lib/api";
 
 function ChatInterface() {
   const [messages, setMessages] = useState([
@@ -15,7 +15,7 @@ function ChatInterface() {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState(1); // Default project
+  const currentProjectId = 1; // Default project
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -103,51 +103,48 @@ function ChatInterface() {
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
+    const question = inputText.trim();
     const userMessage = {
       id: Date.now(),
       role: "user",
-      content: inputText,
+      content: question,
       timestamp: new Date(),
     };
-
-    // Add user message immediately
     setMessages((prev) => [...prev, userMessage]);
     setInputText("");
     setIsLoading(true);
 
     try {
-      // Use your existing API to send message to backend
-      const response = await apiFetch("/api/ask", {
-        method: "POST",
-        body: {
-          question: inputText,
-          project_id: currentProjectId,
-        },
-      });
+      const response = await askQa(question);
 
+      const hasAnswer =
+        response.answer !== null &&
+        typeof response.answer === "string" &&
+        response.answer.trim() !== "";
       const aiMessage = {
         id: Date.now() + 1,
         role: "ai",
-        content:
-          response.answer ||
-          response.response ||
-          "I received your question but couldn't process it.",
+        content: hasAnswer
+          ? response.answer
+          : "I couldn't find a confident answer, but here are relevant snippets.",
         timestamp: new Date(),
-        references: response.references || [],
+        // Map score to confidence (existing UI expects fraction 0-1)
+        confidence: typeof response.score === "number" ? response.score : null,
+        // Provide retrieved chunks separately
+        retrieved: Array.isArray(response.retrieved) ? response.retrieved : [],
+        source: response.source || null,
+        page_number: response.page_number || null,
       };
-
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error("Error sending message:", error);
-
+      console.error("QA ask error", error);
+      const friendly = error.userMessage || "Unexpected error. Try again.";
       const errorMessage = {
         id: Date.now() + 1,
         role: "ai",
-        content:
-          "Sorry, I encountered an error processing your request. Please try again.",
+        content: friendly,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -216,23 +213,54 @@ function ChatInterface() {
                   {message.content}
                 </p>
 
+                {/* Metadata (AI only) */}
+                {message.role === "ai" &&
+                  (message.confidence || message.source) && (
+                    <div className="mt-3 pt-3 border-t border-opacity-20">
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {typeof message.confidence === "number" && (
+                          <span className="px-2 py-1 rounded bg-green-50 text-green-600 border border-green-100">
+                            Confidence: {(message.confidence * 100).toFixed(1)}%
+                          </span>
+                        )}
+                        {message.source && (
+                          <span className="px-2 py-1 rounded bg-purple-50 text-purple-600 border border-purple-100">
+                            Source: {message.source}
+                            {message.page_number !== null &&
+                              message.page_number !== undefined && (
+                                <span className="ml-1">
+                                  (p. {message.page_number})
+                                </span>
+                              )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                 {/* References */}
-                {message.references && message.references.length > 0 && (
+                {message.retrieved && message.retrieved.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-opacity-20">
                     <p className="text-xs font-medium mb-2 opacity-80">
-                      Sources:
+                      Retrieved snippets:
                     </p>
-                    <div className="space-y-1">
-                      {message.references.map((ref, index) => (
+                    <div className="space-y-2">
+                      {message.retrieved.map((chunk, idx) => (
                         <div
-                          key={index}
-                          className={`text-xs px-2 py-1 rounded ${
-                            message.role === "user"
-                              ? "bg-blue-400 bg-opacity-30 text-blue-100"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
+                          key={idx}
+                          className="text-xs p-2 rounded bg-gray-100 text-gray-700 border border-gray-200"
                         >
-                          📄 {ref.source || ref}
+                          <div className="font-semibold flex flex-wrap gap-2">
+                            {chunk.source && <span>📄 {chunk.source}</span>}
+                            {typeof chunk.page_number === "number" && (
+                              <span className="opacity-70">
+                                p. {chunk.page_number}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 leading-relaxed whitespace-pre-wrap">
+                            {chunk.snippet}
+                          </div>
                         </div>
                       ))}
                     </div>
